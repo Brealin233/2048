@@ -5,8 +5,8 @@ using UnityEngine;
 
 public class TileGrid : MonoBehaviour
 {
-    public TileRow[] rows { get; private set; }
-    public TileCell[] cells { get; private set; }
+    private TileRow[] rows { get; set; }
+    private TileCell[] cells { get; set; }
 
     private int size => cells.Length;
     private int height => rows.Length;
@@ -25,8 +25,32 @@ public class TileGrid : MonoBehaviour
             for (int y = 0; y < height; y++)
             {
                 rows[x].cells[y].coordinates = new Vector2Int(x, y);
-                print($"rows[{x}]+cells[{y}]");
             }
         }
-    } 
+        
+        print(cells.Length);
+    }
+
+    public TileCell GetRandomEmptyCell()
+    {
+        int index = UnityEngine.Random.Range(0, size);
+        int startIndex = index;
+
+        while (cells[index].occupied)
+        {
+            index++;
+
+            if (index >= size)
+                index = 0;
+
+            if (index == startIndex)
+            {
+                return null;
+            }
+            
+        }
+       
+        print(cells[index].transform.position.x);
+        return cells[index];
+    }
 }
