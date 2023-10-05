@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class TileCell : MonoBehaviour
@@ -6,5 +7,12 @@ public class TileCell : MonoBehaviour
     public Tile tile { get; set; }
 
     public bool empty => tile == null;
+
     public bool occupied => tile != null;
+
+    private void Update()
+    {
+        
+    }
+
 }

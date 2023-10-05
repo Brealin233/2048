@@ -1,6 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class TileGrid : MonoBehaviour
@@ -9,8 +6,8 @@ public class TileGrid : MonoBehaviour
     private TileCell[] cells { get; set; }
 
     private int size => cells.Length;
-    private int height => rows.Length;
-    private int width => size / height;
+    public int height => rows.Length;
+    public int width => size / height;
 
     private void Awake()
     {
@@ -20,37 +17,57 @@ public class TileGrid : MonoBehaviour
 
     private void Start()
     {
-        for (int x = 0; x < width; x++)
+        for (int i = 0; i < height; i++)
         {
-            for (int y = 0; y < height; y++)
+            for (int j = 0; j < width; j++)
             {
-                rows[x].cells[y].coordinates = new Vector2Int(x, y);
+                rows[i].cells[j].coordinates = new Vector2Int(j, i);
             }
         }
-        
-        print(cells.Length);
     }
 
     public TileCell GetRandomEmptyCell()
     {
-        int index = UnityEngine.Random.Range(0, size);
+        int index = Random.Range(0, size);
         int startIndex = index;
 
         while (cells[index].occupied)
         {
             index++;
 
-            if (index >= size)
+            if (index >= cells.Length)
                 index = 0;
 
             if (index == startIndex)
             {
                 return null;
             }
-            
         }
        
-        print(cells[index].transform.position.x);
         return cells[index];
     }
+
+    public TileCell GetCell(int x, int y)
+    {
+        if (x >= 0 && x < width && y >= 0 && y < height) {
+            return rows[y].cells[x];
+        } 
+        
+        return null;
+    }
+
+    public TileCell GetCell(Vector2Int coordinates)
+    {
+        return GetCell(coordinates.x, coordinates.y);
+    }
+    
+    public TileCell GetAdjacentCell(TileCell cell, Vector2Int direction)
+    {
+        Vector2Int coordinates = cell.coordinates;
+        coordinates.x += direction.x;
+        coordinates.y -= direction.y;
+
+        return GetCell(coordinates);
+    }
 }
+
