@@ -14,8 +14,6 @@ public class TileBoard : MonoBehaviour
     private List<Tile> tileLists;
     private int tileSize = 16;
 
-    private bool waiting;
-
     private void Awake()
     {
         tileGrid = GetComponentInChildren<TileGrid>();
@@ -47,19 +45,23 @@ public class TileBoard : MonoBehaviour
     {
         MoveTiles(Vector2Int.up, 0, 1, 1, 1);
     }
-
-    private void Start()
-    {
-        CreateTile();
-        CreateTile();
-    }
     
-    private void CreateTile()
+    public void CreateTile()
     {
         Tile tile = Instantiate(tilePrefab, tileGrid.transform);
         tile.SetTileState(tileStateList[0], 2);
         tile.Spawn(tileGrid.GetRandomEmptyCell());
         tileLists.Add(tile);
+    }
+
+    public void ClearBoard()
+    {
+        //tileGrid = null;
+        
+        foreach (var tile in tileLists)
+            Destroy(tile.gameObject);
+        
+        tileLists.Clear();
     }
 
     /// <summary>
@@ -82,7 +84,7 @@ public class TileBoard : MonoBehaviour
                 
                 if (cell.occupied)
                 {
-                    changed = MoveTile(cell.tile, direction);
+                    changed |= MoveTile(cell.tile, direction);
                 }
             }
         }
@@ -101,7 +103,11 @@ public class TileBoard : MonoBehaviour
         {
             if (adjacent.occupied)
             {
-                // todo: merging
+                if (CanMerge(tile,adjacent.tile))
+                {
+                    Merge(tile, adjacent.tile);
+                    return true;
+                }
                 break;
             }
             
@@ -121,17 +127,74 @@ public class TileBoard : MonoBehaviour
         return false;
     }
 
+    private bool CanMerge(Tile a, Tile b)
+    {
+        return a.number == b.number && !b.locked;
+    }
+
+    private void Merge(Tile a, Tile b)
+    {
+        tileLists.Remove(a);
+        
+        a.Merge(b.cell);
+        
+        var index = Mathf.Clamp(IndexOf(b.tileState) + 1, 0, tileLists.Count);
+        var number = b.number * 2;
+        
+        b.SetTileState(tileStateList[index],number);
+        GameManager.Instance.IncreaseScore(number);
+    }
+
+    private int IndexOf(TileState state)
+    {
+        for (int i = 0; i < tileStateList.Count; i++)
+        {
+            if (state == tileStateList[i])
+                return i;
+        }
+
+        return -1;
+    }
+
     private IEnumerator WaitForChanges()
     {
-        waiting = true;
-
         GameManager.Instance.inputManager.Disable();
         yield return new WaitForSeconds(.1f);
         GameManager.Instance.inputManager.Enable();
-
-        waiting = false;
         
-        //TODO: create new tile
-        //TODO: check for game over
+        foreach (var tile in tileLists)
+            tile.locked = false;
+        
+        if (tileLists.Count != tileSize)
+            CreateTile();
+
+        if (CheckForGameOver())
+            GameManager.Instance.GameOver();
+        
+    }
+
+    private bool CheckForGameOver()
+    {
+        if (tileLists.Count != tileSize)
+            return false;
+
+        foreach (var tile in tileLists)
+        {
+            TileCell up = tileGrid.GetAdjacentCell(tile.cell, Vector2Int.up);
+            TileCell down = tileGrid.GetAdjacentCell(tile.cell, Vector2Int.down);
+            TileCell left = tileGrid.GetAdjacentCell(tile.cell, Vector2Int.left);
+            TileCell right = tileGrid.GetAdjacentCell(tile.cell, Vector2Int.right);
+
+            if (up != null && CanMerge(tile, up.tile))
+                return false;
+            if (down != null && CanMerge(tile, down.tile))
+                return false;
+            if (left != null && CanMerge(tile, left.tile))
+                return false;
+            if (right != null && CanMerge(tile, right.tile))
+                return false;
+        }
+
+        return true;
     }
 }
